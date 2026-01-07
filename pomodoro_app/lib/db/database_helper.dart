@@ -24,33 +24,53 @@ class DatabaseHelper {
     );
   }
 
-  Future _createDB(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE habits (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        createdAt TEXT NOT NULL
-      )
-    ''');
+ 
+Future _createDB(Database db, int version) async {
+  await db.execute('''
+    CREATE TABLE habits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      emoji TEXT NOT NULL,
+      color INTEGER NOT NULL,
+      reminderHour INTEGER,
+      reminderMinute INTEGER,
+      createdAt TEXT NOT NULL
+    )
+  ''');
 
-    await db.execute('''
-      CREATE TABLE habit_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        habitId TEXT NOT NULL,
-        date TEXT NOT NULL
-      )
-    ''');
-  }
+  await db.execute('''
+    CREATE TABLE habit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      habitId INTEGER NOT NULL,
+      date TEXT NOT NULL
+    )
+  ''');
+}
+
+
 
   // HABITS
-  Future<void> insertHabit(String id, String title) async {
-    final db = await database;
-    await db.insert('habits', {
-      'id': id,
-      'title': title,
-      'createdAt': DateTime.now().toIso8601String(),
-    });
-  }
+Future<int> insertHabit(
+  String title,
+  String emoji,
+  int color,
+  int? hour,
+  int? minute,
+) async {
+  final db = await database;
+
+  return await db.insert('habits', {
+    'title': title,
+    'emoji': emoji,
+    'color': color,
+    'reminderHour': hour,
+    'reminderMinute': minute,
+    'createdAt': DateTime.now().toIso8601String(),
+  });
+}
+
+
+
 
   Future<List<Map<String, dynamic>>> getHabits() async {
     final db = await database;
@@ -58,36 +78,40 @@ class DatabaseHelper {
   }
 
   // LOGS
-  Future<void> toggleLog(String habitId, String date) async {
-    final db = await database;
-    final existing = await db.query(
+  Future<void> toggleLog(int habitId, String date) async {
+  final db = await database;
+
+  final existing = await db.query(
+    'habit_logs',
+    where: 'habitId = ? AND date = ?',
+    whereArgs: [habitId, date],
+  );
+
+  if (existing.isEmpty) {
+    await db.insert('habit_logs', {
+      'habitId': habitId,
+      'date': date,
+    });
+  } else {
+    await db.delete(
       'habit_logs',
       where: 'habitId = ? AND date = ?',
       whereArgs: [habitId, date],
     );
-
-    if (existing.isEmpty) {
-      await db.insert('habit_logs', {
-        'habitId': habitId,
-        'date': date,
-      });
-    } else {
-      await db.delete(
-        'habit_logs',
-        where: 'habitId = ? AND date = ?',
-        whereArgs: [habitId, date],
-      );
-    }
   }
+}
 
-  Future<List<String>> getLogs(String habitId) async {
-    final db = await database;
-    final result = await db.query(
-      'habit_logs',
-      where: 'habitId = ?',
-      whereArgs: [habitId],
-      orderBy: 'date DESC',
-    );
-    return result.map((e) => e['date'] as String).toList();
-  }
+  Future<List<String>> getLogs(int habitId) async {
+  final db = await database;
+
+  final result = await db.query(
+    'habit_logs',
+    where: 'habitId = ?',
+    whereArgs: [habitId],
+    orderBy: 'date DESC',
+  );
+
+  return result.map((e) => e['date'] as String).toList();
+}
+
 }

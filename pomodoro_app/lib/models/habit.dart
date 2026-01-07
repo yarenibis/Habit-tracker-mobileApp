@@ -1,46 +1,47 @@
+import 'package:flutter/material.dart';
 class Habit {
-  final String id;
+  final int id;
   final String title;
-  final List<String> logs; // yyyy-MM-dd (DESC sıralı)
+  final String emoji;
+  final int color;
+  final List<String> logs;
 
   Habit({
     required this.id,
     required this.title,
+    required this.emoji,
+    required this.color,
     required this.logs,
   });
 
+  Color get colorValue => Color(color);
+
+
+  bool get doneToday {
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    return logs.contains(today);
+  }
+
   int get streak {
-    if (logs.isEmpty) return 0;
-
     int count = 0;
-    DateTime today = _onlyDate(DateTime.now());
+    DateTime day = DateTime.now();
 
-    for (int i = 0; i < logs.length; i++) {
-      final logDate = _onlyDate(DateTime.parse(logs[i]));
-
-      if (today.difference(logDate).inDays == count) {
+    while (true) {
+      final key = day.toIso8601String().split('T')[0];
+      if (logs.contains(key)) {
         count++;
+        day = day.subtract(const Duration(days: 1));
       } else {
-        break; // ❌ zincir kırıldı
+        break;
       }
     }
     return count;
   }
 
-  bool get doneToday {
-    final today = _onlyDate(DateTime.now()).toIso8601String().split('T')[0];
-    return logs.contains(today);
-  }
-
   bool get streakBroken {
-    if (logs.isEmpty) return true;
+    final yesterday =
+        DateTime.now().subtract(const Duration(days: 1)).toIso8601String().split('T')[0];
 
-    final yesterday = _onlyDate(DateTime.now().subtract(const Duration(days: 1)))
-        .toIso8601String()
-        .split('T')[0];
-
-    return !logs.contains(yesterday) && !doneToday;
+    return !logs.contains(yesterday) && streak > 0;
   }
-
-  DateTime _onlyDate(DateTime d) => DateTime(d.year, d.month, d.day);
 }
