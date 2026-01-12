@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+
 class Habit {
   final int id;
   final String title;
   final String emoji;
   final int color;
-  final List<String> logs;
+  final List<String> logs; // yyyy-MM-dd
 
   Habit({
     required this.id,
@@ -16,32 +17,52 @@ class Habit {
 
   Color get colorValue => Color(color);
 
+  String _key(DateTime d) => d.toIso8601String().split('T')[0];
 
+  /// ✅ Bugün yapıldı mı
   bool get doneToday {
-    final today = DateTime.now().toIso8601String().split('T')[0];
-    return logs.contains(today);
+    return logs.contains(_key(DateTime.now()));
   }
 
+  /// 🔥 Mevcut streak
   int get streak {
     int count = 0;
     DateTime day = DateTime.now();
 
-    while (true) {
-      final key = day.toIso8601String().split('T')[0];
-      if (logs.contains(key)) {
-        count++;
-        day = day.subtract(const Duration(days: 1));
-      } else {
-        break;
-      }
+    while (logs.contains(_key(day))) {
+      count++;
+      day = day.subtract(const Duration(days: 1));
     }
     return count;
   }
 
-  bool get streakBroken {
-    final yesterday =
-        DateTime.now().subtract(const Duration(days: 1)).toIso8601String().split('T')[0];
+  /// 🏆 En uzun streak
+  int get longestStreak {
+    if (logs.isEmpty) return 0;
 
-    return !logs.contains(yesterday) && streak > 0;
+    final sorted = logs
+        .map((e) => DateTime.parse(e))
+        .toList()
+      ..sort();
+
+    int longest = 1;
+    int current = 1;
+
+    for (int i = 1; i < sorted.length; i++) {
+      if (sorted[i].difference(sorted[i - 1]).inDays == 1) {
+        current++;
+        longest = current > longest ? current : longest;
+      } else {
+        current = 1;
+      }
+    }
+    return longest;
+  }
+
+  /// 📅 Calendar için map
+  Map<String, bool> get logMap {
+    return {
+      for (var d in logs) d: true,
+    };
   }
 }

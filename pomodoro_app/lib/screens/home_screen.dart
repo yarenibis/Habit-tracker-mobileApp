@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:pomodoro_app/widgets/section_title.dart';
 import '../db/database_helper.dart';
 import '../models/habit.dart';
 import '../screens/add_habit_screen.dart';
@@ -6,7 +8,10 @@ import '../widgets/week_calendar.dart';
 import '../widgets/habit_horizontal_card.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Function(List<Habit>) onHabitsChanged;
+  const HomeScreen({
+    super.key,
+  required this.onHabitsChanged,});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -40,15 +45,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     setState(() => habits = loaded);
+widget.onHabitsChanged(loaded);
   }
 
   @override
   Widget build(BuildContext context) {
+    final todayText = DateFormat('MMMM d').format(DateTime.now());
+
+    final todoHabits =
+        habits.where((h) => !h.doneToday).toList();
+    final doneHabits =
+        habits.where((h) => h.doneToday).toList();
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Today'),
-        elevation: 0,
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.push(
@@ -61,39 +70,77 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         child: const Icon(Icons.add),
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 12),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: ListView(
+            children: [
+              const SizedBox(height: 8),
 
-          /// 🔝 TAKVİM
-          const WeekCalendar(),
+              /// 🟢 HEADER
+              Text(
+                'Today',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                todayText,
+                style: const TextStyle(color: Colors.grey),
+              ),
 
-          const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
-          /// 📋 HABIT LIST
-          Expanded(
-            child: habits.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Henüz alışkanlık eklenmedi',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: habits.length,
-                    itemBuilder: (context, index) {
-                      final habit = habits[index];
-                      return HabitHorizontalCard(
-                        habit: habit,
-                        onToggle: () async {
-                          await db.toggleLog(habit.id, todayKey());
-                          loadHabits();
-                        },
-                      );
+              /// 📅 WEEK CALENDAR
+              const WeekCalendar(),
+
+              const SizedBox(height: 20),
+
+              /// 🖼️ ILLUSTRATION
+              Image.asset(
+                'assets/images/Healthy.png',
+                height: 220,
+                fit: BoxFit.contain,
+              ),
+
+              const SizedBox(height: 24),
+
+              /// 📌 TO DO
+              SectionTitle(title: 'To Do'),
+              const SizedBox(height: 8),
+
+              ...todoHabits.map(
+                (habit) => HabitHorizontalCard(
+                  habit: habit,
+                  onToggle: () async {
+                    await db.toggleLog(habit.id, todayKey());
+                    loadHabits();
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              /// ✅ DONE
+              if (doneHabits.isNotEmpty) ...[
+                SectionTitle(title: 'Done'),
+                const SizedBox(height: 8),
+                ...doneHabits.map(
+                  (habit) => HabitHorizontalCard(
+                    habit: habit,
+                    onToggle: () async {
+                      await db.toggleLog(habit.id, todayKey());
+                      loadHabits();
                     },
                   ),
+                ),
+              ],
+
+              const SizedBox(height: 40),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
