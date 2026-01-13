@@ -41,14 +41,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   return ChoiceChip(
                     label: Text('${habit.emoji} ${habit.title}'),
                     selected: habit.id == selectedHabit.id,
-                    selectedColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                    backgroundColor: Colors.grey.shade200,
-                    labelStyle: TextStyle(
-                      color: habit.id == selectedHabit.id
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.black87,
-                    ),
                     onSelected: (_) {
                       setState(() => selectedHabit = habit);
                     },

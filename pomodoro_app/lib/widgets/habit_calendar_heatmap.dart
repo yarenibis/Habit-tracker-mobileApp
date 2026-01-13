@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pomodoro_app/theme/app_theme.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class HabitCalendarHeatmap extends StatelessWidget {
@@ -28,7 +29,7 @@ class HabitCalendarHeatmap extends StatelessWidget {
           return Container(
             margin: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: done ? Colors.green : Colors.transparent,
+              color: done ? AppTheme.green : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
@@ -45,7 +46,7 @@ class HabitCalendarHeatmap extends StatelessWidget {
           return Container(
             margin: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: done ? Colors.green : Colors.blue.shade100,
+              color: done ? AppTheme.green : AppTheme.blue,
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,

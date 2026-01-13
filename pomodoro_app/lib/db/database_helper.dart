@@ -43,6 +43,7 @@ Future _createDB(Database db, int version) async {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       habitId INTEGER NOT NULL,
       date TEXT NOT NULL
+      
     )
   ''');
 }

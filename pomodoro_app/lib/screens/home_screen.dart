@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:pomodoro_app/widgets/section_title.dart';
 import '../db/database_helper.dart';
 import '../models/habit.dart';
 import '../screens/add_habit_screen.dart';
-import '../widgets/week_calendar.dart';
 import '../widgets/habit_horizontal_card.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(List<Habit>) onHabitsChanged;
-  const HomeScreen({
-    super.key,
-  required this.onHabitsChanged,});
+  const HomeScreen({super.key, required this.onHabitsChanged});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -45,103 +41,265 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     setState(() => habits = loaded);
-widget.onHabitsChanged(loaded);
+    widget.onHabitsChanged(loaded);
   }
 
   @override
   Widget build(BuildContext context) {
-    final todayText = DateFormat('MMMM d').format(DateTime.now());
+    final theme = Theme.of(context);
+    final now = DateTime.now();
 
-    final todoHabits =
-        habits.where((h) => !h.doneToday).toList();
-    final doneHabits =
-        habits.where((h) => h.doneToday).toList();
+    final todo = habits.where((h) => !h.doneToday).toList();
+    final done = habits.where((h) => h.doneToday).toList();
+    final percent =
+        habits.isEmpty ? 0 : ((done.length / habits.length) * 100).round();
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AddHabitScreen(),
-            ),
-          );
-          if (result == true) loadHabits();
-        },
-        child: const Icon(Icons.add),
-      ),
+      backgroundColor: const Color(0xFFF7F9FA),
       body: SafeArea(
-        child: Padding(
+        child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: ListView(
-            children: [
-              const SizedBox(height: 8),
+          children: [
+            const SizedBox(height: 12),
 
-              /// 🟢 HEADER
-              Text(
-                'Today',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                todayText,
-                style: const TextStyle(color: Colors.grey),
-              ),
-
-              const SizedBox(height: 16),
-
-              /// 📅 WEEK CALENDAR
-              const WeekCalendar(),
-
-              const SizedBox(height: 20),
-
-              /// 🖼️ ILLUSTRATION
-              Image.asset(
-                'assets/images/Healthy.png',
-                height: 220,
-                fit: BoxFit.contain,
-              ),
-
-              const SizedBox(height: 24),
-
-              /// 📌 TO DO
-              SectionTitle(title: 'To Do'),
-              const SizedBox(height: 8),
-
-              ...todoHabits.map(
-                (habit) => HabitHorizontalCard(
-                  habit: habit,
-                  onToggle: () async {
-                    await db.toggleLog(habit.id, todayKey());
-                    loadHabits();
-                  },
+            /// HEADER
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      DateFormat('MMMM yyyy').format(now).toUpperCase(),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.grey,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    Text(
+                      'Today',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
+                Row(
+                  children: [
+                    Icon(Icons.search, color: Colors.grey.shade700),
+                    const SizedBox(width: 12),
+                    const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.grey,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            /// DATE SELECTOR
+            SizedBox(
+              height: 70,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: 7,
+                itemBuilder: (_, i) {
+                  final date = now.add(Duration(days: i - 3));
+                  final selected = DateUtils.isSameDay(date, now);
+
+                  return Container(
+                    width: 56,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      color: selected ? const Color(0xFF1E5C5E) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          DateFormat('EEE').format(date).toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: selected ? Colors.white70 : Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          date.day.toString(),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                selected ? Colors.white : Colors.grey.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
+            ),
 
-              const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-              /// ✅ DONE
-              if (doneHabits.isNotEmpty) ...[
-                SectionTitle(title: 'Done'),
-                const SizedBox(height: 8),
-                ...doneHabits.map(
-                  (habit) => HabitHorizontalCard(
-                    habit: habit,
+            /// DAILY MOMENTUM CARD
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            '🔥 ${5}-DAY STREAK',
+                            style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Daily Momentum',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${done.length} of ${habits.length} habits completed.\nYou’re almost there!',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 70,
+                        height: 70,
+                        child: CircularProgressIndicator(
+                          value: percent / 100,
+                          strokeWidth: 8,
+                          color: const Color(0xFF1E5C5E),
+                          backgroundColor: Colors.grey.shade200,
+                        ),
+                      ),
+                      Text(
+                        '$percent%',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            /// UPCOMING
+            _sectionHeader('Upcoming Habits', '${todo.length} REMAINING'),
+
+            const SizedBox(height: 12),
+
+            ...todo.map(
+              (h) => HabitHorizontalCard(
+                habit: h,
+                onToggle: () async {
+                  await db.toggleLog(h.id, todayKey());
+                  loadHabits();
+                },
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            /// COMPLETED
+            if (done.isNotEmpty) ...[
+              Text(
+                'Completed Today',
+                style:
+                    theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
+              ...done.map(
+                (h) => Opacity(
+                  opacity: 0.5,
+                  child: HabitHorizontalCard(
+                    habit: h,
                     onToggle: () async {
-                      await db.toggleLog(habit.id, todayKey());
+                      await db.toggleLog(h.id, todayKey());
                       loadHabits();
                     },
                   ),
                 ),
-              ],
-
-              const SizedBox(height: 40),
+              ),
             ],
+
+            const SizedBox(height: 100),
+          ],
+        ),
+      ),
+
+      /// BOTTOM BUTTON
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16),
+        child: ElevatedButton.icon(
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AddHabitScreen()),
+            );
+            if (result == true) loadHabits();
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1E5C5E),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          ),
+          icon: const Icon(Icons.add),
+          label: const Text(
+            'New Habit',
+            style: TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _sectionHeader(String title, String badge) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.teal.shade50,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            badge,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ),
+      ],
     );
   }
 }

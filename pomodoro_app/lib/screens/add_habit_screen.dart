@@ -11,12 +11,23 @@ class AddHabitScreen extends StatefulWidget {
 
 class _AddHabitScreenState extends State<AddHabitScreen> {
   final titleController = TextEditingController();
-
-  String emoji = '🔥';
-  Color color = Colors.green;
-  TimeOfDay? reminderTime;
-
   final db = DatabaseHelper.instance;
+
+  String emoji = '🧘';
+  Color selectedColor = const Color(0xFF1E5C5E);
+  TimeOfDay? reminderTime;
+  bool reminderEnabled = false;
+  int selectedFrequency = 0; // 0: Daily, 1: Weekly, 2: Specific
+
+  final emojis = ['🧘', '📖', '💧', '🏃‍♂️'];
+  final colors = [
+    const Color(0xFF1E5C5E),
+    const Color(0xFFFFC0CB),
+    const Color(0xFFB8C1EC),
+    const Color(0xFFFFE4B5),
+    const Color(0xFFDFF2EA),
+    const Color(0xFFEAEAEA),
+  ];
 
   Future<void> saveHabit() async {
     if (titleController.text.trim().isEmpty) return;
@@ -24,12 +35,12 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
     final habitId = await db.insertHabit(
       titleController.text.trim(),
       emoji,
-      color.value,
-      reminderTime?.hour,
-      reminderTime?.minute,
+      selectedColor.value,
+      reminderEnabled ? reminderTime?.hour : null,
+      reminderEnabled ? reminderTime?.minute : null,
     );
 
-    if (reminderTime != null) {
+    if (reminderEnabled && reminderTime != null) {
       await NotificationService.scheduleDaily(
         id: habitId,
         title: 'Alışkanlık Zamanı $emoji',
@@ -44,51 +55,90 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Alışkanlık Ekle')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      backgroundColor: theme.colorScheme.background,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        leading: const BackButton(),
+        title: const Text('Create New Habit'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: Icon(Icons.more_horiz),
+          )
+        ],
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
           children: [
-            // TITLE
+            /// HABIT NAME
+            const Text('Habit Name', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'Alışkanlık adı',
+              decoration: InputDecoration(
+                hintText: 'e.g. Morning Meditation',
+                filled: true,
+                fillColor: theme.colorScheme.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
-            // EMOJI
-            DropdownButton<String>(
-              value: emoji,
-              items: ['🔥', '📖', '🏃‍♂️', '💧', '🧠']
-                  .map((e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(e, style: const TextStyle(fontSize: 24)),
-                      ))
-                  .toList(),
-              onChanged: (v) => setState(() => emoji = v!),
+            /// ICON & COLOR
+            const Text('Choose Icon & Color', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+
+            Row(
+              children: emojis.map((e) {
+                final selected = emoji == e;
+                return GestureDetector(
+                  onTap: () => setState(() => emoji = e),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? selectedColor.withOpacity(0.15)
+                          : theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: selected ? selectedColor : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(e, style: const TextStyle(fontSize: 24)),
+                  ),
+                );
+              }).toList(),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // COLOR
             Row(
-              children: Colors.primaries.take(6).map((c) {
+              children: colors.map((c) {
                 return GestureDetector(
-                  onTap: () => setState(() => color = c),
+                  onTap: () => setState(() => selectedColor = c),
                   child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    width: 32,
-                    height: 32,
+                    margin: const EdgeInsets.only(right: 10),
+                    width: 28,
+                    height: 28,
                     decoration: BoxDecoration(
                       color: c,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        width: color == c ? 3 : 1,
-                        color: Colors.black,
+                        width: selectedColor == c ? 3 : 1,
+                        color: selectedColor == c ? Colors.black : Colors.grey.shade300,
                       ),
                     ),
                   ),
@@ -96,33 +146,113 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
               }).toList(),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
-            // REMINDER
-            ListTile(
-              title: Text(
-                reminderTime == null
-                    ? 'Hatırlatma ekle'
-                    : 'Hatırlatma: ${reminderTime!.format(context)}',
-              ),
-              trailing: const Icon(Icons.alarm),
-              onTap: () async {
-                final time = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.now(),
+            /// FREQUENCY
+            const Text('Frequency', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+
+            Row(
+              children: ['Daily', 'Weekly', 'Specific'].asMap().entries.map((entry) {
+                final index = entry.key;
+                final label = entry.value;
+                final selected = selectedFrequency == index;
+
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => selectedFrequency = index),
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? theme.colorScheme.primary.withOpacity(0.15)
+                            : theme.colorScheme.surface,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: selected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ),
+                  ),
                 );
-                if (time != null) {
-                  setState(() => reminderTime = time);
-                }
-              },
+              }).toList(),
             ),
 
-            const Spacer(),
+            const SizedBox(height: 24),
 
-            // SAVE
-            ElevatedButton(
-              onPressed: saveHabit,
-              child: const Text('Kaydet'),
+            /// REMINDER
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.notifications_none),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Daily Reminder',
+                            style: TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 2),
+                        Text(
+                          reminderTime == null
+                              ? 'Set a specific time'
+                              : reminderTime!.format(context),
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: reminderEnabled,
+                    onChanged: (v) async {
+                      if (v) {
+                        final time = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                        );
+                        if (time == null) return;
+                        reminderTime = time;
+                      }
+                      setState(() => reminderEnabled = v);
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            /// CREATE BUTTON
+            SizedBox(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: saveHabit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text(
+                  'Create Habit 🚀',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
             ),
           ],
         ),

@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Habit Tracker',
-      theme: AppTheme.lightTheme,
+      theme: ThemeData.light(),
       home: const MainScreen(),
     );
   }
