@@ -25,7 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     nameController.text = prefs.getString('profile_name') ?? '';
     final imagePath = prefs.getString('profile_image');
-    if (imagePath != null) {
+    if (imagePath != null && File(imagePath).existsSync()) {
       profileImage = File(imagePath);
     }
     setState(() {});
@@ -52,60 +52,105 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: Padding(
+      backgroundColor: const Color(0xFFF7F9FA),
+      appBar: AppBar(
+        title: const Text('Profile Settings'),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: ListView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            /// PROFILE IMAGE
-            GestureDetector(
-              onTap: pickImage,
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.grey.shade300,
-                backgroundImage:
-                    profileImage != null ? FileImage(profileImage!) : null,
-                child: profileImage == null
-                    ? const Icon(Icons.person, size: 40)
-                    : null,
-              ),
+        children: [
+          /// PROFILE IMAGE
+          Center(
+            child: Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.grey.shade300,
+                  backgroundImage:
+                      profileImage != null ? FileImage(profileImage!) : null,
+                  child: profileImage == null
+                      ? const Icon(Icons.person, size: 50)
+                      : null,
+                ),
+                Positioned(
+                  bottom: 4,
+                  right: 4,
+                  child: InkWell(
+                    onTap: pickImage,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1E5C5E),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
+          ),
 
-            const SizedBox(height: 16),
+          const SizedBox(height: 32),
 
-            TextButton(
-              onPressed: pickImage,
-              child: const Text('Fotoğraf Seç'),
+          /// PROFILE INFO CARD
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
             ),
-
-            const SizedBox(height: 24),
-
-            /// NAME
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Profil Adı',
-                border: OutlineInputBorder(),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Personal Information',
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Profile Name',
+                    prefixIcon: Icon(Icons.person_outline),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
             ),
+          ),
 
-            const Spacer(),
+          const SizedBox(height: 40),
 
-            /// SAVE BUTTON
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: saveProfile,
-                child: const Text(
-                  'Kaydet',
-                  style: TextStyle(fontSize: 16),
+          /// SAVE BUTTON
+          SizedBox(
+            height: 54,
+            child: ElevatedButton(
+              onPressed: saveProfile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E5C5E),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
+              child: const Text(
+                'Save Changes',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../db/database_helper.dart';
 import '../models/habit.dart';
 import '../screens/add_habit_screen.dart';
 import '../widgets/habit_horizontal_card.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(List<Habit>) onHabitsChanged;
@@ -17,12 +20,26 @@ class _HomeScreenState extends State<HomeScreen> {
   final db = DatabaseHelper.instance;
   List<Habit> habits = [];
 
+  File? profileImage;
+
   String todayKey() => DateTime.now().toIso8601String().split('T')[0];
 
   @override
   void initState() {
     super.initState();
     loadHabits();
+    loadProfileImage();
+  }
+
+  Future<void> loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final imagePath = prefs.getString('profile_image');
+
+    if (imagePath != null && File(imagePath).existsSync()) {
+      setState(() {
+        profileImage = File(imagePath);
+      });
+    }
   }
 
   Future<void> loadHabits() async {
@@ -88,9 +105,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Icon(Icons.search, color: Colors.grey.shade700),
                     const SizedBox(width: 12),
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 18,
                       backgroundColor: Colors.grey,
+                      backgroundImage: profileImage != null
+                          ? FileImage(profileImage!)
+                          : null,
+                      child: profileImage == null
+                          ? const Icon(Icons.person,
+                              size: 18, color: Colors.white)
+                          : null,
                     ),
                   ],
                 ),
