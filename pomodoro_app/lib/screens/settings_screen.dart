@@ -146,7 +146,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: const Text(
                 'Save Changes',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white),
               ),
             ),
           ),

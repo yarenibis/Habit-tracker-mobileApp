@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/habit.dart';
 import '../widgets/habit_calendar_heatmap.dart';
 import '../widgets/stat_box.dart';
+import '../widgets/weekly_mood_chart.dart';
 
 class ProgressScreen extends StatefulWidget {
   final List<Habit> habits;
@@ -25,9 +26,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Progress')),
-      body: Padding(
+      body: SingleChildScrollView(
+        // ✅ SCROLL EKLENDİ
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             /// 🔘 HABIT SELECTOR
             SizedBox(
@@ -58,6 +61,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
             const SizedBox(height: 24),
 
+            /// 📊 WEEKLY MOOD CHART
+            const WeeklyMoodChart(),
+
+            const SizedBox(height: 24),
+
             /// 🔥 STATS
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -73,8 +81,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
               ],
             ),
 
-            const Spacer(),
+            const SizedBox(height: 32),
 
+            /// ✏️ EDIT BUTTON
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

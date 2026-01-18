@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pomodoro_app/widgets/mood_card.dart';
 import '../db/database_helper.dart';
 import '../models/habit.dart';
 import '../screens/add_habit_screen.dart';
@@ -167,7 +168,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 0),
+            MoodCard(),
 
             /// DAILY MOMENTUM CARD
             Container(
